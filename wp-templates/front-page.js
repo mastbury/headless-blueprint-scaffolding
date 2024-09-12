@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql, useQuery } from "@apollo/client";
 import Head from "next/head";
 import Link from "next/link";
 import Header from "../components/header";
@@ -6,50 +6,60 @@ import EntryHeader from "../components/entry-header";
 import Footer from "../components/footer";
 import style from "../styles/front-page.module.css";
 
+// Define the GetHomePage query
+const GET_HOME_PAGE = gql`
+  ${Header.fragments.entry}
+  query GetHomePage {
+    ...HeaderFragment
+  }
+`;
+
+// Define the StickyNews query
+const STICKY_NEWS_QUERY = gql`
+  query StickyNews {
+    posts {
+      nodes {
+        id
+        slug
+        title(format: RENDERED)
+      }
+    }
+  }
+`;
+
 export default function Component(props) {
-  const { title: siteTitle, description: siteDescription } =
-    props.data.generalSettings;
+  const { title: siteTitle, description: siteDescription } = props.data.generalSettings;
   const menuItems = props.data.primaryMenuItems.nodes;
+
+  // Use the StickyNews query
+  const { data, loading, error } = useQuery(STICKY_NEWS_QUERY);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) {
+    console.error("Error fetching sticky news:", error);
+    return <p>Error: {error.message}</p>;
+  }
+
+  const posts = data.posts.nodes;
 
   return (
     <>
       <Head>
         <title>{siteTitle}</title>
       </Head>
-
       <Header
         siteTitle={siteTitle}
         siteDescription={siteDescription}
         menuItems={menuItems}
       />
-
       <main className="container">
         <EntryHeader title="Welcome to the Faust Scaffold Blueprint" />
-
         <section className={style.cardGrid}>
-          <Link
-            href="https://faustjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={style.card}
-          >
-            <h3>Documentation →</h3>
-            <p>
-              Learn more about Faust.js through guides and reference
-              documentation.
-            </p>
-          </Link>
-
-          <Link
-            href="https://my.wpengine.com/atlas#/create/blueprint"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={style.card}
-          >
-            <h3>Blueprints →</h3>
-            <p>Explore production ready Faust.js starter projects.</p>
-          </Link>
-
+          {posts.map(post => (
+            <Link key={post.id} href={`/${post.slug}`} className={style.card}>
+              <h3>{post.title}</h3>
+            </Link>
+          ))}
           <Link
             href="https://wpengine.com/atlas"
             target="_blank"
@@ -62,7 +72,6 @@ export default function Component(props) {
               instance.
             </p>
           </Link>
-
           <Link
             href="https://github.com/wpengine/faustjs"
             target="_blank"
@@ -74,15 +83,10 @@ export default function Component(props) {
           </Link>
         </section>
       </main>
-
       <Footer />
     </>
   );
 }
 
-Component.query = gql`
-  ${Header.fragments.entry}
-  query GetHomePage {
-    ...HeaderFragment
-  }
-`;
+// Attach the GetHomePage query to the Component
+Component.query = GET_HOME_PAGE;
