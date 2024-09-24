@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./footer.module.css";
 import { gql, useQuery } from "@apollo/client";
 
@@ -27,14 +28,12 @@ export default function Footer() {
 
   const menuItems = data.menuItems.nodes;
 
-
-  {console.log(menuItems);}
   return (
     <footer className={styles.footer}>
       &copy; JimCuddy.com {new Date().getFullYear()}. All Rights Reserved.
       <ul className="footer-menu">
         {menuItems.map((item) => (
-          <li key={item.id}>{item.label}</li>
+          <li key={item.id}><Link href={item.uri} >{item.label}</Link></li>
         ))}
       </ul>
     </footer>
